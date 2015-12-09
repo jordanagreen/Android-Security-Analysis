@@ -19,7 +19,8 @@ import java.io.IOException;
 public class SourceSinkTest implements AndroidTest {
 
     @Override
-    public JSONObject runTest(String apkFile){
+    public JSONObject runTest(String apkFolder){
+        String apkFile = getApkFile(apkFolder);
         String sourceSinkFile = "testAPKs/sourcesAndSinks.txt";
         JSONObject json = new JSONObject();
         try {
@@ -44,6 +45,11 @@ public class SourceSinkTest implements AndroidTest {
             e.printStackTrace();
         }
         return json;
+    }
+
+    private String getApkFile(String apkFolder){
+        //TODO: find the actual apk file in this folder - for now just return the test file
+        return apkFolder + "/app-debug.apk";
     }
 
     /**
