@@ -18,6 +18,7 @@ import java.io.IOException;
  */
 public class SourceSinkTest implements AndroidTest {
 
+    @Override
     public JSONObject runTest(String apkFile){
         String sourceSinkFile = "testAPKs/sourcesAndSinks.txt";
         JSONObject json = new JSONObject();
