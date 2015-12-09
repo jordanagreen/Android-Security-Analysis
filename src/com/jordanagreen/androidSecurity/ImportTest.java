@@ -3,13 +3,14 @@ package com.jordanagreen.androidSecurity;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.NotFoundException;
+import jdk.internal.util.xml.impl.Input;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by Jordan on 12/9/2015.
@@ -30,19 +31,45 @@ public class ImportTest implements AndroidTest {
 //        String className ="com.jordanagreen.androidSecurity.AndroidTestSuite";
 
         //read from a .class file that isn't in this project
-        InputStream ins = new FileInputStream("AndroidTestSuite.class");
-        CtClass newClass = mClassPool.makeClass(ins);
+//        InputStream ins = new FileInputStream("AndroidTestSuite.class");
+//        String directory = "testAPKs/washizu-dare-test/app-debug";
+//        InputStream ins = new FileInputStream(directory + "/Game.class");
+//        CtClass newClass = mClassPool.makeClass(ins);
 
+        String directory = "testAPKs/washizu-dare-test/app-debug/com/example/jordanagreen/washizu";
+        List<String> classes = getClassFiles(directory);
         JSONArray arr = new JSONArray();
-
-        //TODO: figure out how to get a list of classes from an .apk and run this on all of them
-        String className = newClass.getName();
-        JSONObject obj = new JSONObject();
-        obj.put(className, getImportedClasses(className));
-        arr.put(obj);
-
+        for (String classFilepath: classes){
+            InputStream ins = new FileInputStream(classFilepath);
+            CtClass newClass = mClassPool.makeClass(ins);
+            String name = newClass.getName();
+            System.out.println("\n" + name);
+            JSONObject obj = new JSONObject();
+            //TODO: check imports against a list of ones we want to look for (ad libraries, etc.)
+            obj.put(name, getImportedClasses(name));
+            arr.put(obj);
+        }
         json.put("Classes", arr);
         return json;
+
+    }
+
+    //return the names all the .class files in the given directory
+    private List<String> getClassFiles(String directory){
+        File dir = new File(directory);
+        File[] files = dir.listFiles(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                return name.endsWith(".class");
+            }
+        });
+        //for now we need the paths, not the actual files
+        List<String> classes = new ArrayList<>();
+        for (File file: files){
+//            System.out.println(file.getPath());
+            classes.add(file.getPath());
+        }
+        return classes;
     }
 
     private JSONArray getImportedClasses(String className) throws NotFoundException{
