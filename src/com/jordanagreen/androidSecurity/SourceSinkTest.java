@@ -1,3 +1,5 @@
+package com.jordanagreen.androidSecurity;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -24,28 +26,17 @@ public class SourceSinkTest implements AndroidTest {
             MultiMap<ResultSinkInfo, ResultSourceInfo> results = infoflowResults.getResults();
 
             JSONArray arr = new JSONArray();
-//			System.out.println(infoflowResults);
             for (ResultSinkInfo sink : results.keySet()) {
                 JSONObject obj = new JSONObject();
                 obj.put("Sink", sink);
                 JSONArray sources = new JSONArray();
-                //logger.info("Found a flow to sink {}, from the following sources:", sink);
                 for (ResultSourceInfo source : results.get(sink)) {
-                    String str = "Sink: " + sink + "\tsource: " + source;
-                    //logger.info("\t- {}", source.getSource());
-                    //if (source.getPath() != null)
-                    //logger.info("\t\ton Path {}", Arrays.toString(source.getPath()));
-                    //str = str + "\tPath: " + Arrays.toString(source.getPath());
-//                    System.out.println(str);
-//                    bw.write(str + "\n");
-//					JSONObject src = new JSONObject();
-//					src.put("source", source);
                     sources.put(source);
                 }
                 obj.put("sources", sources);
                 arr.put(obj);
             }
-            json.put("results", arr);
+            json.put("Source_Sink_Results", arr);
 
         } catch (IOException | XmlPullParserException | JSONException e) {
             // TODO Auto-generated catch block

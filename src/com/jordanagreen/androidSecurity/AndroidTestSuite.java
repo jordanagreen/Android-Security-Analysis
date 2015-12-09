@@ -1,5 +1,6 @@
+package com.jordanagreen.androidSecurity;
+
 import org.json.JSONArray;
-import org.json.JSONObject;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -21,7 +22,8 @@ public class AndroidTestSuite {
     public static void main(String[] args){
         String apkFile = "testAPKs/jaderead-restart.apk";
         AndroidTestSuite androidTestSuite = new AndroidTestSuite();
-        androidTestSuite.addTest(new SourceSinkTest());
+//        androidTestSuite.addTest(new com.jordanagreen.androidSecurity.SourceSinkTest());
+        androidTestSuite.addTest(new ImportTest());
         JSONArray results = androidTestSuite.runTests(apkFile);
         String outputPath = "output.json";
         try{
@@ -40,7 +42,11 @@ public class AndroidTestSuite {
     JSONArray runTests(String apkFile){
         JSONArray arr = new JSONArray();
         for (AndroidTest test: mTests){
-            arr.put(test.runTest(apkFile));
+            try{
+                arr.put(test.runTest(apkFile));
+            } catch (Exception e){
+                e.printStackTrace();
+            }
         }
         return arr;
     }
