@@ -31,26 +31,10 @@ public class ImportTest implements AndroidTest {
 
     ImportTest(String filterFile){
         mClassPool = ClassPool.getDefault();
-        mFilter = getFilterFromFile(filterFile);
+        mFilter = Helper.getFilterFromFile(filterFile);
     }
 
-    private Set<Pattern> getFilterFromFile(String filename) {
-        try{
-            BufferedReader br = new BufferedReader(new FileReader(filename));
-            Set<Pattern> filter = new HashSet<>();
-            String line;
-            while ((line = br.readLine()) != null){
-                if (line.trim().equals("")){
-                    continue;
-                }
-                filter.add(Pattern.compile(line.trim().toLowerCase()));
-            }
-            return filter;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
+
 
     @Override
     public JSONObject runTest(String apkFolder) throws NotFoundException, JSONException, IOException{
@@ -95,7 +79,7 @@ public class ImportTest implements AndroidTest {
         File dir = new File(directory);
 
         String[] filter = new String[]{"class"};
-
+        //TODO: can probably just ignore the android APK files, they just take up space in the results
         List<File> files = (List<File>) FileUtils.listFiles(dir, filter, true);
 //        System.out.println(files.size());
 
@@ -112,7 +96,6 @@ public class ImportTest implements AndroidTest {
     private JSONArray getImportedClasses(String className) throws NotFoundException {
         JSONArray arr = new JSONArray();
         for (String importedClass : (Iterable<String>) mClassPool.get(className).getRefClasses()) {
-//            System.out.println(importedClass);
             arr.put(importedClass);
         }
         return arr;
@@ -129,6 +112,7 @@ public class ImportTest implements AndroidTest {
                 if (matcher.find()){
                     System.out.println(importedClass + " " + filter.pattern());
                     arr.put(importedClass);
+                    break;
                 }
             }
         }
