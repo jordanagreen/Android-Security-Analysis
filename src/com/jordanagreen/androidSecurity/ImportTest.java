@@ -3,7 +3,6 @@ package com.jordanagreen.androidSecurity;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.NotFoundException;
-import jdk.internal.util.xml.impl.Input;
 import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -11,7 +10,11 @@ import org.json.JSONObject;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by Jordan on 12/9/2015.
@@ -19,9 +22,34 @@ import java.util.List;
 public class ImportTest implements AndroidTest {
 
     private ClassPool mClassPool;
+    private Set<Pattern> mFilter;
 
     ImportTest(){
         mClassPool = ClassPool.getDefault();
+        mFilter = null;
+    }
+
+    ImportTest(String filterFile){
+        mClassPool = ClassPool.getDefault();
+        mFilter = getFilterFromFile(filterFile);
+    }
+
+    private Set<Pattern> getFilterFromFile(String filename) {
+        try{
+            BufferedReader br = new BufferedReader(new FileReader(filename));
+            Set<Pattern> filter = new HashSet<>();
+            String line;
+            while ((line = br.readLine()) != null){
+                if (line.trim().equals("")){
+                    continue;
+                }
+                filter.add(Pattern.compile(line.trim().toLowerCase()));
+            }
+            return filter;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     @Override
@@ -39,22 +67,27 @@ public class ImportTest implements AndroidTest {
 
 //        String directory = "testAPKs/washizu-dare-test/app-debug/com/example/jordanagreen/washizu";
 //        List<String> classes = getClassFiles(directory);
+//        Set<Pattern> filter = getFilterFromFile(FILTER_FILE);
         List<String> classes = getClassFiles(apkFolder);
         JSONArray arr = new JSONArray();
         for (String classFilepath: classes){
             InputStream ins = new FileInputStream(classFilepath);
             CtClass newClass = mClassPool.makeClass(ins);
             String name = newClass.getName();
-            System.out.println("\n" + name);
+//            System.out.println(name);
             JSONObject obj = new JSONObject();
-            //TODO: check imports against a list of ones we want to look for (ad libraries, etc.)
-            obj.put(name, getImportedClasses(name));
-            arr.put(obj);
+            JSONArray imports = getImportedClasses(name, mFilter);
+            if (imports.length() > 0){
+                obj.put(name, imports);
+                arr.put(obj);
+            }
         }
         json.put("Classes", arr);
         return json;
 
     }
+
+
 
     //return the names all the .class files in the given directory
     private List<String> getClassFiles(String directory){
@@ -64,7 +97,7 @@ public class ImportTest implements AndroidTest {
         String[] filter = new String[]{"class"};
 
         List<File> files = (List<File>) FileUtils.listFiles(dir, filter, true);
-        System.out.println(files.size());
+//        System.out.println(files.size());
 
         //for now we need the paths, not the actual files
         //TODO: see if we can just return the file itself and run javassist on that
@@ -76,11 +109,28 @@ public class ImportTest implements AndroidTest {
         return classes;
     }
 
-    private JSONArray getImportedClasses(String className) throws NotFoundException{
+    private JSONArray getImportedClasses(String className) throws NotFoundException {
         JSONArray arr = new JSONArray();
-        for (String importedClass : (Iterable<String>)mClassPool.get(className).getRefClasses()) {
+        for (String importedClass : (Iterable<String>) mClassPool.get(className).getRefClasses()) {
 //            System.out.println(importedClass);
             arr.put(importedClass);
+        }
+        return arr;
+    }
+
+    private JSONArray getImportedClasses(String className, Set<Pattern> filters) throws NotFoundException{
+        if (filters == null){
+            return getImportedClasses(className);
+        }
+        JSONArray arr = new JSONArray();
+        for (String importedClass: (Iterable<String>) mClassPool.get(className).getRefClasses()){
+            for (Pattern filter: filters){
+                Matcher matcher = filter.matcher(importedClass);
+                if (matcher.find()){
+                    System.out.println(importedClass + " " + filter.pattern());
+                    arr.put(importedClass);
+                }
+            }
         }
         return arr;
     }

@@ -5,9 +5,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.xmlpull.v1.XmlPullParserException;
 import soot.jimple.infoflow.android.SetupApplication;
+import soot.jimple.infoflow.handlers.ResultsAvailableHandler;
 import soot.jimple.infoflow.results.InfoflowResults;
 import soot.jimple.infoflow.results.ResultSinkInfo;
 import soot.jimple.infoflow.results.ResultSourceInfo;
+import soot.jimple.infoflow.solver.cfg.IInfoflowCFG;
 import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
 import soot.util.MultiMap;
 
@@ -24,23 +26,27 @@ public class SourceSinkTest implements AndroidTest {
         String sourceSinkFile = "testAPKs/sourcesAndSinks.txt";
         JSONObject json = new JSONObject();
         try {
-            InfoflowResults infoflowResults = analyzeAPKFile(apkFile, sourceSinkFile);
-            MultiMap<ResultSinkInfo, ResultSourceInfo> results = infoflowResults.getResults();
+            System.out.println("Starting analysis");
+            analyzeAPKFile(apkFile, sourceSinkFile, (iInfoflowCFG, infoflowResults) -> {
+                    MultiMap<ResultSinkInfo, ResultSourceInfo> results = infoflowResults.getResults();
+                    System.out.println("Analysis done");
+                    JSONArray arr = new JSONArray();
+                    try {
+                        for (ResultSinkInfo sink : results.keySet()) {
+                            JSONObject obj = new JSONObject();
+                            obj.put("sink", sink);
+                            JSONArray sources = new JSONArray();
+                            results.get(sink).forEach(sources::put);
+                            obj.put("sources", sources);
+                            arr.put(obj);
+                        }
+                        json.put("results", arr);
+                    } catch (JSONException e){
+                        e.printStackTrace();
+                    }
+            });
 
-            JSONArray arr = new JSONArray();
-            for (ResultSinkInfo sink : results.keySet()) {
-                JSONObject obj = new JSONObject();
-                obj.put("Sink", sink);
-                JSONArray sources = new JSONArray();
-                for (ResultSourceInfo source : results.get(sink)) {
-                    sources.put(source);
-                }
-                obj.put("sources", sources);
-                arr.put(obj);
-            }
-            json.put("Source_Sink_Results", arr);
-
-        } catch (IOException | XmlPullParserException | JSONException e) {
+        } catch (IOException | XmlPullParserException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
@@ -49,7 +55,8 @@ public class SourceSinkTest implements AndroidTest {
 
     private String getApkFile(String apkFolder){
         //TODO: find the actual apk file in this folder - for now just return the test file
-        return apkFolder + "/app-debug.apk";
+//        return apkFolder + "/app-debug.apk";
+        return apkFolder + "/comicrack.apk";
     }
 
     /**
@@ -62,9 +69,9 @@ public class SourceSinkTest implements AndroidTest {
      * @throws XmlPullParserException Thrown if the Android manifest file could
      * not be read.
      */
-    public InfoflowResults analyzeAPKFile(String apkFileName, String xmlFileName)
+    public InfoflowResults analyzeAPKFile(String apkFileName, String xmlFileName, ResultsAvailableHandler handler)
             throws IOException, XmlPullParserException {
-        return analyzeAPKFile(apkFileName, xmlFileName, false, false, false);
+        return analyzeAPKFile(apkFileName, xmlFileName, handler, false, false, false);
     }
 
     /**
@@ -79,12 +86,15 @@ public class SourceSinkTest implements AndroidTest {
      * @throws XmlPullParserException Thrown if the Android manifest file could
      * not be read.
      */
-    public InfoflowResults analyzeAPKFile(String apkFileName, String xmlFileName, boolean enableImplicitFlows, boolean enableStaticFields, boolean flowSensitiveAliasing)
+    public InfoflowResults analyzeAPKFile(String apkFileName, String xmlFileName, ResultsAvailableHandler handler,
+                                          boolean enableImplicitFlows, boolean enableStaticFields,
+                                          boolean flowSensitiveAliasing)
             throws IOException, XmlPullParserException {
         String androidJars = System.getenv("ANDROID_JARS");
         if (androidJars == null)
             androidJars = System.getProperty("ANDROID_JARS");
         if (androidJars == null)
+            //TODO: this should be fixed once testing is done
             androidJars = "C:\\Users\\Jordan\\AppData\\Local\\Android\\sdk\\platforms";
 //			throw new RuntimeException("Android JAR dir not set");
         System.out.println("Loading Android.jar files from " + androidJars);
@@ -95,6 +105,6 @@ public class SourceSinkTest implements AndroidTest {
         setupApplication.getConfig().setEnableImplicitFlows(enableImplicitFlows);
         setupApplication.getConfig().setEnableStaticFieldTracking(enableStaticFields);
         setupApplication.getConfig().setFlowSensitiveAliasing(flowSensitiveAliasing);
-        return setupApplication.runInfoflow();
+        return setupApplication.runInfoflow(handler);
     }
 }

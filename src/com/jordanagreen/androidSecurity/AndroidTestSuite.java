@@ -1,6 +1,7 @@
 package com.jordanagreen.androidSecurity;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedWriter;
@@ -15,6 +16,12 @@ import java.util.List;
 public class AndroidTestSuite {
 
     private List<AndroidTest> mTests;
+    private static final String SUCCESS_KEY = "success";
+    private static final String TEST_NAME_KEY = "test-name";
+    private static final String RESULTS_KEY = "results";
+    private static final String EXCEPTION_KEY = "exception";
+    private static final String AD_FILTER_FILE = "ImportFilters-Ads.txt";
+
 
     AndroidTestSuite(){
         mTests = new ArrayList<>();
@@ -22,12 +29,20 @@ public class AndroidTestSuite {
 
     public static void main(String[] args){
 //        String apkFile = "testAPKs/jaderead-restart.apk";
-        String apkFolder = "testAPKs/washizu-dare-test";
+//        String apkFolder = "testAPKs/washizu-dare-test";
+        String apkFolder = "testAPKs/comicrack-free";
         AndroidTestSuite androidTestSuite = new AndroidTestSuite();
-        androidTestSuite.addTest(new SourceSinkTest());
+//        androidTestSuite.addTest(new SourceSinkTest());
         androidTestSuite.addTest(new ImportTest());
-        JSONArray results = androidTestSuite.runTests(apkFolder);
-        String outputPath = "output.json";
+        androidTestSuite.addTest(new AdTest(AD_FILTER_FILE));
+        JSONArray results;
+        try{
+            results = androidTestSuite.runTests(apkFolder);
+        } catch (JSONException e){
+            e.printStackTrace();
+            results = new JSONArray();
+        }
+        String outputPath = "comicrack-output.json";
         try{
             BufferedWriter bw = new BufferedWriter( new FileWriter(outputPath));
             bw.write(results.toString());
@@ -41,16 +56,21 @@ public class AndroidTestSuite {
         mTests.add(test);
     }
 
-    JSONArray runTests(String apkFolder){
+    JSONArray runTests(String apkFolder) throws JSONException{
         JSONArray arr = new JSONArray();
         for (AndroidTest test: mTests){
+            JSONObject json = new JSONObject();
+            json.put(TEST_NAME_KEY, test.getClass().getSimpleName());
             try{
-                JSONObject json = new JSONObject();
-                json.put(test.getClass().getSimpleName(), test.runTest(apkFolder));
-                arr.put(json);
+                json.put(RESULTS_KEY, test.runTest(apkFolder));
+                json.put(SUCCESS_KEY, true);
             } catch (Exception e){
+                //if a test goes wrong, fail it and move on to the next one
                 e.printStackTrace();
+                json.put(SUCCESS_KEY, false);
+                json.put(EXCEPTION_KEY, e.toString());
             }
+            arr.put(json);
         }
         return arr;
     }
