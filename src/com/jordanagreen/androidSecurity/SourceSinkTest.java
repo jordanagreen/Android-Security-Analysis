@@ -1,5 +1,6 @@
 package com.jordanagreen.androidSecurity;
 
+import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -13,7 +14,9 @@ import soot.jimple.infoflow.solver.cfg.IInfoflowCFG;
 import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
 import soot.util.MultiMap;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Created by Jordan on 12/8/2015.
@@ -56,7 +59,12 @@ public class SourceSinkTest implements AndroidTest {
     private String getApkFile(String apkFolder){
         //TODO: find the actual apk file in this folder - for now just return the test file
 //        return apkFolder + "/app-debug.apk";
-        return apkFolder + "/comicrack.apk";
+//        return apkFolder + "/comicrack.apk";
+        File dir = new File(apkFolder);
+        String[] filter = new String[]{"apk"};
+        //TODO: can probably just ignore the android APK files, they just take up space in the results
+        List<File> files = (List<File>) FileUtils.listFiles(dir, filter, true);
+        return files.get(0).getPath();
     }
 
     /**

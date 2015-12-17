@@ -28,14 +28,19 @@ public class AndroidTestSuite {
     }
 
     public static void main(String[] args){
+
+        String apkFolder = args[0];
+        String[] path = apkFolder.split("/");
+        String outputPath = path[path.length-1] + "-output.json";
+        System.out.println(apkFolder + " " + outputPath);
 //        String apkFile = "testAPKs/jaderead-restart.apk";
-        String apkFolder = "testAPKs/washizu-dare-test";
+//        String apkFolder = "testAPKs/washizu-dare-test";
 //        String apkFolder = "testAPKs/comicrack-free";
         AndroidTestSuite androidTestSuite = new AndroidTestSuite();
-//        androidTestSuite.addTest(new SourceSinkTest());
-//        androidTestSuite.addTest(new ImportTest());
+        androidTestSuite.addTest(new SourceSinkTest());
+        androidTestSuite.addTest(new ImportTest());
 //        androidTestSuite.addTest(new AdTest(AD_FILTER_FILE));
-        androidTestSuite.addTest(new FieldTest());
+//        androidTestSuite.addTest(new FieldTest());
         JSONArray results;
         try{
             results = androidTestSuite.runTests(apkFolder);
@@ -44,7 +49,7 @@ public class AndroidTestSuite {
             results = new JSONArray();
         }
 //        String outputPath = "comicrack-output.json";
-        String outputPath = "washizu-output.json";
+//        String outputPath = "washizu-output.json";
         try{
             BufferedWriter bw = new BufferedWriter( new FileWriter(outputPath));
             bw.write(results.toString());
