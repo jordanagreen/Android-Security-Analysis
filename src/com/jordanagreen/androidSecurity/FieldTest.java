@@ -12,10 +12,7 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -26,6 +23,7 @@ public class FieldTest implements AndroidTest {
 
     private ClassPool mClassPool;
     private Set<Pattern> mFilter;
+    private Set<Pattern> mIgnoreFilter;
 
     private static final String NAME_KEY = "name";
     private static final String TYPE_KEY = "type";
@@ -33,22 +31,28 @@ public class FieldTest implements AndroidTest {
 
     FieldTest(){
         mClassPool = ClassPool.getDefault();
+        mIgnoreFilter = getIgnoreFilter();
     }
 
     FieldTest(String filterFile){
         mClassPool = ClassPool.getDefault();
         mFilter = Helper.getFilterFromFile(filterFile);
+        mIgnoreFilter = getIgnoreFilter();
     }
 
     @Override
     public JSONObject runTest(String apkFolder) throws Exception {
-        List<String> classes = getClassFiles(apkFolder);
+        List<String> classes = Helper.getClassFiles(apkFolder);
         JSONObject json = new JSONObject();
         JSONArray arr = new JSONArray();
         for (String classFilepath: classes){
             InputStream ins = new FileInputStream(classFilepath);
             CtClass newClass = mClassPool.makeClass(ins);
             String name = newClass.getName();
+            //skip any android classes since they're the same in everything
+            if (Helper.hasAnyMatch(name, mIgnoreFilter)){
+                continue;
+            }
             JSONObject obj = new JSONObject();
             JSONArray fields = getFields(name, mFilter);
             if (fields.length() > 0){
@@ -60,6 +64,14 @@ public class FieldTest implements AndroidTest {
         return json;
     }
 
+
+
+    private Set<Pattern> getIgnoreFilter(){
+        Set<Pattern> ignoreFilter = new HashSet<>();
+        ignoreFilter.add(Pattern.compile("^android\\.support\\..*"));
+        return ignoreFilter;
+    }
+
     private JSONArray getFields(String className, Set<Pattern> filters) throws NotFoundException, JSONException {
         if (filters == null){
             return getFields(className);
@@ -69,8 +81,10 @@ public class FieldTest implements AndroidTest {
         for (CtField field: fields){
             try{
                 String fieldName = field.getName();
-                String fieldType = field.getType().toString();
-                String fieldValue = field.getConstantValue().toString();
+                String fieldType = field.getType().getPackageName();
+                System.out.println(fieldType);
+                Object value = field.getConstantValue();
+                String fieldValue = (value == null) ? null : value.toString();
 //                    System.out.println(fieldType + " " + fieldName + " " + fieldValue);
                 for (Pattern filter: filters){
                     Matcher matcher = filter.matcher(fieldName);
@@ -91,14 +105,16 @@ public class FieldTest implements AndroidTest {
     }
 
     private JSONArray getFields(String className) throws NotFoundException, JSONException {
-        System.out.println(className);
+//        System.out.println(className);
         JSONArray arr = new JSONArray();
         List<CtField> fields = Arrays.asList(mClassPool.get(className).getFields());
         for (CtField field: fields){
             try{
                 String fieldName = field.getName();
-                String fieldType = field.getType().toString();
-                String fieldValue = field.getConstantValue().toString();
+                String fieldType = field.getType().getSimpleName();
+//                System.out.println(fieldType);
+                Object value = field.getConstantValue();
+                String fieldValue = (value == null) ? null : value.toString();
 //                    System.out.println(fieldType + " " + fieldName + " " + fieldValue);
                 JSONObject obj = new JSONObject();
                 obj.put(NAME_KEY, fieldName);
@@ -112,17 +128,4 @@ public class FieldTest implements AndroidTest {
         return arr;
     }
 
-    private List<String> getClassFiles(String directory){
-        System.out.println(directory);
-        File dir = new File(directory);
-        String[] filter = new String[]{"class"};
-        List<File> files = (List<File>) FileUtils.listFiles(dir, filter, true);
-        //for now we need the paths, not the actual files
-        //TODO: see if we can just return the file itself and run javassist on that
-        List<String> classes = new ArrayList<>();
-        for (File file: files){
-            classes.add(file.getPath());
-        }
-        return classes;
-    }
 }

@@ -5,7 +5,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.xmlpull.v1.XmlPullParserException;
+import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
 import soot.jimple.infoflow.android.SetupApplication;
+import soot.jimple.infoflow.data.pathBuilders.DefaultPathBuilderFactory;
 import soot.jimple.infoflow.handlers.ResultsAvailableHandler;
 import soot.jimple.infoflow.results.InfoflowResults;
 import soot.jimple.infoflow.results.ResultSinkInfo;
@@ -26,7 +28,7 @@ public class SourceSinkTest implements AndroidTest {
     @Override
     public JSONObject runTest(String apkFolder){
         String apkFile = getApkFile(apkFolder);
-        String sourceSinkFile = "testAPKs/sourcesAndSinks.txt";
+        String sourceSinkFile = "sourcesAndSinks.txt";
         JSONObject json = new JSONObject();
         try {
             System.out.println("Starting analysis");
@@ -113,6 +115,14 @@ public class SourceSinkTest implements AndroidTest {
         setupApplication.getConfig().setEnableImplicitFlows(enableImplicitFlows);
         setupApplication.getConfig().setEnableStaticFieldTracking(enableStaticFields);
         setupApplication.getConfig().setFlowSensitiveAliasing(flowSensitiveAliasing);
+//        setupApplication.getConfig().setInspectSinks(false);
+//        setupApplication.getConfig().setInspectSources(false);
+        setupApplication.getConfig().setEnableArraySizeTainting(false);
+        setupApplication.getConfig().setComputeResultPaths(false);
+        InfoflowAndroidConfiguration.setAccessPathLength(3);
+        setupApplication.getConfig().setFlowSensitiveAliasing(false);
+        setupApplication.getConfig().setEnableCallbacks(false);
+        setupApplication.getConfig().setPathBuilder(DefaultPathBuilderFactory.PathBuilder.ContextInsensitiveSourceFinder);
         return setupApplication.runInfoflow(handler);
     }
 }

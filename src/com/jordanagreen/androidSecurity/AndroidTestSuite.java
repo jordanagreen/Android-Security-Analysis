@@ -1,10 +1,13 @@
 package com.jordanagreen.androidSecurity;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,15 +33,14 @@ public class AndroidTestSuite {
     public static void main(String[] args){
 
         String apkFolder = args[0];
-        String[] path = apkFolder.split("/");
-        String outputPath = path[path.length-1] + "-output.json";
+        String outputPath = FilenameUtils.getBaseName(apkFolder) + "-output.json";
         System.out.println(apkFolder + " " + outputPath);
 //        String apkFile = "testAPKs/jaderead-restart.apk";
 //        String apkFolder = "testAPKs/washizu-dare-test";
 //        String apkFolder = "testAPKs/comicrack-free";
         AndroidTestSuite androidTestSuite = new AndroidTestSuite();
         androidTestSuite.addTest(new SourceSinkTest());
-        androidTestSuite.addTest(new ImportTest());
+//        androidTestSuite.addTest(new ImportTest());
 //        androidTestSuite.addTest(new AdTest(AD_FILTER_FILE));
 //        androidTestSuite.addTest(new FieldTest());
         JSONArray results;

@@ -52,7 +52,7 @@ public class ImportTest implements AndroidTest {
 //        String directory = "testAPKs/washizu-dare-test/app-debug/com/example/jordanagreen/washizu";
 //        List<String> classes = getClassFiles(directory);
 //        Set<Pattern> filter = getFilterFromFile(FILTER_FILE);
-        List<String> classes = getClassFiles(apkFolder);
+        List<String> classes = Helper.getClassFiles(apkFolder);
         JSONArray arr = new JSONArray();
         for (String classFilepath: classes){
             InputStream ins = new FileInputStream(classFilepath);
@@ -72,26 +72,6 @@ public class ImportTest implements AndroidTest {
     }
 
 
-
-    //return the names all the .class files in the given directory
-    private List<String> getClassFiles(String directory){
-        System.out.println(directory);
-        File dir = new File(directory);
-
-        String[] filter = new String[]{"class"};
-        //TODO: can probably just ignore the android APK files, they just take up space in the results
-        List<File> files = (List<File>) FileUtils.listFiles(dir, filter, true);
-//        System.out.println(files.size());
-
-        //for now we need the paths, not the actual files
-        //TODO: see if we can just return the file itself and run javassist on that
-        List<String> classes = new ArrayList<>();
-        for (File file: files){
-//            System.out.println(file.getPath());
-            classes.add(file.getPath());
-        }
-        return classes;
-    }
 
     private JSONArray getImportedClasses(String className) throws NotFoundException {
         JSONArray arr = new JSONArray();
